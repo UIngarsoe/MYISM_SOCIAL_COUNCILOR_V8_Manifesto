@@ -1,0 +1,181 @@
+# MYISM SOCIAL COUNCILOR V8: Deterministic Intervention Engine Prototype
+# Author: Inspired by U Ingar Soe (MYANMAR/BURMA)
+# Date: October 15, 2025
+# This is a simple Python prototype implementing the core concepts from the academic report.
+# It uses a rule-based approach with hardcoded candidate actions for demonstration.
+# In a full system, action generation could be expanded with NLP or a database.
+# Assumptions:
+# - User provides current Harmony state as a dict of components (0-10 scale).
+# - Problem P is a string; decomposition is simplified to internal/external factors.
+# - Actions are dicts with 'name', 'cost', 'noharm', and deltas for sub-variables.
+# - Optimization selects the single best action maximizing total Delta Harmony.
+
+import numpy as np  # For basic calculations
+
+class DeterministicInterventionEngine:
+    def __init__(self, current_state):
+        """
+        Initialize with current Harmony state.
+        current_state: dict with keys 'IntrinsicState', 'ExternalFitness', 'MeritScore'
+                       Each is a dict of sub-variables (0-10 float scale).
+        Example:
+        {
+            'IntrinsicState': {'Mood': 4.0, 'CognitiveClarity': 5.0, 'PhysicalEnergy': 6.0},
+            'ExternalFitness': {'ResourceBalance': 3.0, 'SocialCohesion': 4.0, 'EnvironmentalImpact': 5.0},
+            'MeritScore': {'ProSocialActions': 7.0, 'NoHarmCompliance': 8.0}  # Note: Merit has 2 subs, but avg for component
+        }
+        """
+        self.current_state = current_state
+        self.constraints = {
+            'Poormanmeism': lambda a: a['cost'] == 0,  # Zero-cost hard constraint
+            'Internationalism': lambda a: True,  # Assume all actions fair/justice-compliant for proto
+            'Universalism': lambda a: a['noharm'] == 1  # No-harm hard constraint
+        }
+    
+    def calculate_harmony(self, state=None):
+        """Compute Harmony(t) = 1/3 * (Intrinsic + External + Merit)"""
+        if state is None:
+            state = self.current_state
+        intrinsic = np.mean(list(state['IntrinsicState'].values()))
+        external = np.mean(list(state['ExternalFitness'].values()))
+        merit = np.mean(list(state['MeritScore'].values()))
+        return (intrinsic + external + merit) / 3
+    
+    def decompose_problem(self, P):
+        """Decomposition (Duality Principle): Split P into internal (F_A) and external (F_B) factors.
+        For proto: Simple keyword-based split (e.g., 'mood' -> internal).
+        Returns: tuple (F_A, F_B) as strings.
+        """
+        # Dummy decomposition: Assume P is a string, split based on common terms
+        internal_keywords = ['mood', 'energy', 'clarity', 'stress', 'internal']
+        external_keywords = ['social', 'resource', 'environment', 'external']
+        
+        F_A = 'Internal factors: ' + ' '.join(word for word in P.split() if word.lower() in internal_keywords)
+        F_B = 'External factors: ' + ' '.join(word for word in P.split() if word.lower() in external_keywords)
+        
+        if not F_A: F_A = 'General internal harmony'
+        if not F_B: F_B = 'General external harmony'
+        
+        return F_A, F_B
+    
+    def generate_candidates(self, F_A, F_B):
+        """Generate candidate actions based on factors. Hardcoded for prototype."""
+        # Example actions: Each with name, cost (0 or >0), noharm (0 or 1), and deltas (dict of sub-var changes)
+        candidates = [
+            {
+                'name': 'Meditate for 10 minutes (focus on breath)',
+                'cost': 0,
+                'noharm': 1,
+                'deltas': {
+                    'IntrinsicState': {'Mood': 2.0, 'CognitiveClarity': 1.5, 'PhysicalEnergy': 0.5},
+                    'ExternalFitness': {'ResourceBalance': 0, 'SocialCohesion': 0, 'EnvironmentalImpact': 0},
+                    'MeritScore': {'ProSocialActions': 0.5, 'NoHarmCompliance': 1.0}
+                }
+            },
+            {
+                'name': 'Journal three gratitudes',
+                'cost': 0,
+                'noharm': 1,
+                'deltas': {
+                    'IntrinsicState': {'Mood': 1.5, 'CognitiveClarity': 2.0, 'PhysicalEnergy': 0},
+                    'ExternalFitness': {'ResourceBalance': 0, 'SocialCohesion': 0.5, 'EnvironmentalImpact': 0},
+                    'MeritScore': {'ProSocialActions': 1.0, 'NoHarmCompliance': 1.0}
+                }
+            },
+            {
+                'name': 'Take a neighborhood walk (observe nature)',
+                'cost': 0,
+                'noharm': 1,
+                'deltas': {
+                    'IntrinsicState': {'Mood': 1.0, 'CognitiveClarity': 1.0, 'PhysicalEnergy': 2.0},
+                    'ExternalFitness': {'ResourceBalance': 0, 'SocialCohesion': 0, 'EnvironmentalImpact': 1.0},
+                    'MeritScore': {'ProSocialActions': 0.5, 'NoHarmCompliance': 1.0}
+                }
+            },
+            {
+                'name': 'Call a friend for support',  # Assuming no data cost
+                'cost': 0,
+                'noharm': 1,
+                'deltas': {
+                    'IntrinsicState': {'Mood': 2.0, 'CognitiveClarity': 0.5, 'PhysicalEnergy': 0},
+                    'ExternalFitness': {'ResourceBalance': 0, 'SocialCohesion': 2.0, 'EnvironmentalImpact': 0},
+                    'MeritScore': {'ProSocialActions': 1.5, 'NoHarmCompliance': 1.0}
+                }
+            },
+            {
+                'name': 'Buy a coffee (invalid example)',
+                'cost': 5,  # Fails cost=0
+                'noharm': 1,
+                'deltas': {
+                    'IntrinsicState': {'Mood': 1.0, 'CognitiveClarity': 0, 'PhysicalEnergy': 1.0},
+                    'ExternalFitness': {'ResourceBalance': -1.0, 'SocialCohesion': 0, 'EnvironmentalImpact': -0.5},
+                    'MeritScore': {'ProSocialActions': 0, 'NoHarmCompliance': 0.5}
+                }
+            },
+            # Add more actions as needed...
+        ]
+        # Filter candidates loosely based on F_A/F_B (for proto: return all)
+        return candidates
+    
+    def filter_candidates(self, candidates):
+        """Apply C-Vector constraints: Must satisfy all."""
+        filtered = []
+        for a in candidates:
+            if all(constraint(a) for constraint in self.constraints.values()):
+                filtered.append(a)
+        return filtered
+    
+    def optimize_action(self, filtered):
+        """Select argmax Delta Harmony.
+        Delta = sum of avg deltas per component.
+        """
+        if not filtered:
+            return None, "No valid actions satisfy constraints."
+        
+        best_a = None
+        max_delta = -np.inf
+        
+        for a in filtered:
+            delta_intrinsic = np.mean(list(a['deltas']['IntrinsicState'].values()))
+            delta_external = np.mean(list(a['deltas']['ExternalFitness'].values()))
+            delta_merit = np.mean(list(a['deltas']['MeritScore'].values()))
+            total_delta = delta_intrinsic + delta_external + delta_merit
+            if total_delta > max_delta:
+                max_delta = total_delta
+                best_a = a
+        
+        return best_a, f"Max Delta Harmony: {max_delta / 3:.2f} (gradient uplift)"
+    
+    def run_engine(self, P):
+        """Full flow: Decompose -> Generate -> Filter -> Optimize"""
+        F_A, F_B = self.decompose_problem(P)
+        candidates = self.generate_candidates(F_A, F_B)
+        filtered = self.filter_candidates(candidates)
+        best_a, message = self.optimize_action(filtered)
+        
+        print(f"Problem: {P}")
+        print(f"Decomposition: F_A={F_A}, F_B={F_B}")
+        print(f"Filtered Candidates: {len(filtered)}")
+        
+        if best_a:
+            print(f"Recommended Action: {best_a['name']}")
+            print(message)
+            # Simulate new state (for demo)
+            new_state = {comp: {sub: val + best_a['deltas'][comp].get(sub, 0) for sub, val in subs.items()}
+                         for comp, subs in self.current_state.items()}
+            old_h = self.calculate_harmony()
+            new_h = self.calculate_harmony(new_state)
+            print(f"Old Harmony: {old_h:.2f} -> New: {new_h:.2f}")
+        else:
+            print(message)
+
+# Example Usage
+if __name__ == "__main__":
+    current_state = {
+        'IntrinsicState': {'Mood': 4.0, 'CognitiveClarity': 5.0, 'PhysicalEnergy': 6.0},
+        'ExternalFitness': {'ResourceBalance': 3.0, 'SocialCohesion': 4.0, 'EnvironmentalImpact': 5.0},
+        'MeritScore': {'ProSocialActions': 7.0, 'NoHarmCompliance': 8.0}
+    }
+    engine = DeterministicInterventionEngine(current_state)
+    P = "Feeling stagnant; need momentum without spending. Focus on mood and social."
+    engine.run_engine(P)
